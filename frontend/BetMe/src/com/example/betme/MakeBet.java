@@ -1,17 +1,35 @@
 package com.example.betme;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import org.apache.http.Header;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 
-
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -19,6 +37,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.MeasureSpec;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
@@ -29,8 +48,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.LinearLayout.LayoutParams;
 
+@SuppressLint("NewApi")
+@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class MakeBet extends Activity {
-
+	private String userID = new String();
+	
     private ExpandListAdapter ExpAdapter1;
     private ArrayList<Group> ExpListItems1;
     private ExpandableListView ExpandList1;
@@ -66,6 +88,15 @@ public class MakeBet extends Activity {
 	private ArrayList<Category> categories;
 	
 	protected Context mContext;
+	
+	private ArrayList<String> friends = new ArrayList<String>();
+	private ArrayList<String> friendPics = new ArrayList<String>();
+	private ArrayList<String> friendIDs = new ArrayList<String>();
+	private ArrayList<Boolean> friendSelected = new ArrayList<Boolean>();
+	private ArrayList<String> teams = new ArrayList<String>();
+	private String terms = new String();
+	private String date = new String();
+	
 	public final ArrayList<ArrayList<Boolean>> mCheckedState = new ArrayList<ArrayList<Boolean>>();
     
 	int nfl_images[] = { R.drawable.bears, R.drawable.bengals,  R.drawable.bills,  R.drawable.broncos,
@@ -93,9 +124,15 @@ public class MakeBet extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+    	Intent myIntent = getIntent(); // gets the previously created intent
+        userID = myIntent.getStringExtra("id");
+    	
         super.onCreate(savedInstanceState);
         setContentView(R.layout.make_bet);
-
+        
+        getFriends();
+        
+        
         ExpandList1 = (ExpandableListView) findViewById(R.id.pick_friend);
         ExpListItems1 = SetStandardGroups1();
         ExpAdapter1 = new ExpandListAdapter(MakeBet.this, ExpListItems1);
@@ -157,11 +194,17 @@ public class MakeBet extends Activity {
 					
 					// remove child category from parent's selection list
 					category.selection.remove(checkbox.getText().toString());
+					
+					//remove from team list
+					teams.remove(checkbox.getText().toString());
 				}
 				else{
 					mCheckedState.get(groupPosition).set(childPosition, true);
 					// add child category to parent's selection list
 					category.selection.add(checkbox.getText().toString());
+					
+					//add to team list
+					teams.add(checkbox.getText().toString());
 					
 					// sort list in alphabetical order
 					Collections.sort(category.selection, new CustomComparator());
@@ -397,11 +440,8 @@ public class MakeBet extends Activity {
 	public ArrayList<Group> SetStandardGroups1() {
 
     	String option="Choose a friend";
-    	ArrayList<String> friends = new ArrayList<String>();
-    	friends.add("Bob");
-    	friends.add("Fred");
-    	friends.add("John");
-
+    	
+    	
         ArrayList<Group> list = new ArrayList<Group>();
 
         ArrayList<Object> ch_list;
@@ -411,10 +451,11 @@ public class MakeBet extends Activity {
 
             ch_list = new ArrayList<Object>();
             
+           
             	for (int j=0; j < friends.size(); j++) {
                     Child ch = new Child();
                     ch.setName(friends.get(j));
-                 //   ch.setImage(Images[j]);
+                   // ch.setImage(friendPics.get(j));
                     ch_list.add(ch);
                 }
                 gru.setItems(ch_list);
@@ -433,6 +474,125 @@ public class MakeBet extends Activity {
     	startActivity(myIntent);
     }
 
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
+	@SuppressLint("NewApi")
+	public void getFriends(){
+    	StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+
+		StrictMode.setThreadPolicy(policy); 
+       
+//        Intent myIntent = getIntent(); // gets the previously created intent
+//        String key = myIntent.getStringExtra("key");
+        
+        RequestParams params = new RequestParams();
+        params.put("id", userID);
+        
+       // final ArrayList<String> images = new ArrayList<String>();
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get("betme-os.appspot.com/MakeBet", params, new AsyncHttpResponseHandler() {
+
+            @Override
+			public void onSuccess(int statusCode, Header[] headers, byte[] response) {
+            	String str;
+				try {
+					str = new String(response, "UTF-8");
+					JSONObject dict = new JSONObject(str);
+					JSONArray jsonFriends = dict.getJSONArray("friends");
+					JSONArray jsonFriendIds = dict.getJSONArray("friend_ids");
+					JSONArray jsonFriendPics = dict.getJSONArray("friend_pics");
+					for(int i = 0; i < jsonFriends.length();i++){
+						friends.add(jsonFriends.get(i).toString());
+						friendIDs.add(jsonFriendIds.get(i).toString());
+						friendPics.add(jsonFriendPics.get(i).toString());
+						friendSelected.add(false);
+					}
+					
+					
+			           
+					
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				    				
+            }
+
+			@Override
+			public void onFailure(int arg0, Header[] arg1, byte[] arg2,
+					Throwable arg3) {
+				// TODO Auto-generated method stub
+				
+			}
+        });
+	
+    }
+    public void addBet(View view){
+    	StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+
+		StrictMode.setThreadPolicy(policy); 
+       
+//        Intent myIntent = getIntent(); // gets the previously created intent
+//        String key = myIntent.getStringExtra("key");
+       int index = -1;
+       for(int k = 0; k <friendSelected.size(); k++){
+    	   if(friendSelected.get(k)){
+    		   index = k;
+    	   }
+       }
+        View makeBetLayout = (View) view.getParent().getParent();
+        View chooseTermsLayout = makeBetLayout.findViewById(R.id.pick_terms);
+        TextView termView = (TextView) chooseTermsLayout.findViewById(R.id.textView1);
+        terms = termView.getText().toString();
+        
+        View chooseDateLayout = makeBetLayout.findViewById(R.id.pick_date);
+        TextView dateView = (TextView) chooseDateLayout.findViewById(R.id.textView1);
+        date = dateView.getText().toString();
+        
+        RequestParams params = new RequestParams();
+        params.put("user_id", userID);
+        params.put("friend_id", friendIDs.get(index));
+        params.put("team1", teams.get(0));
+        params.put("team2", teams.get(1));
+        params.put("terms", terms);
+        params.put("date", date);
+        
+        
+        
+       // final ArrayList<String> images = new ArrayList<String>();
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.post("betme-os.appspot.com/MakeBet", params, new AsyncHttpResponseHandler() {
+
+            @Override
+			public void onSuccess(int statusCode, Header[] headers, byte[] response) {
+              				
+            }
+
+			@Override
+			public void onFailure(int arg0, Header[] arg1, byte[] arg2,
+					Throwable arg3) {
+				// TODO Auto-generated method stub
+				
+			}
+        });
+    }
+    public void setCheck(View view){
+    	CheckBox check = (CheckBox) view.findViewById(R.id.checkbox);
+    	View parent = (View) view.getParent();
+		ViewGroup grandParent = (ViewGroup) parent.getParent();
+		int addPosition = grandParent.indexOfChild(parent);
+		
+    	if (check.isChecked()){
+    		friendSelected.set(addPosition, true);
+    	}
+    	else{
+    		friendSelected.set(addPosition, false);
+    	}
+    }
+    
+    
     public class ExpandListAdapter extends BaseExpandableListAdapter {
 
         private Context context;
@@ -477,6 +637,7 @@ public class MakeBet extends Activity {
                     LayoutInflater infalInflater = (LayoutInflater) context
                             .getSystemService(context.LAYOUT_INFLATER_SERVICE);
                     convertView = infalInflater.inflate(R.layout.text_box, null);
+                    
                 }
                 if(name.equals("Enter a date")){
                 	TextView tv = (TextView) convertView.findViewById(R.id.editText1);
@@ -503,7 +664,19 @@ public class MakeBet extends Activity {
                 ImageView iv = (ImageView) convertView.findViewById(R.id.flag);
 
                 tv.setText(child.getName().toString());
-                iv.setImageResource(child.getImage());
+                //
+	   	            
+	            try {
+	            	  
+	            	  Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(friendPics.get(childPosition)).getContent());
+	            	  iv.setImageBitmap(bitmap); 
+	            	} catch (MalformedURLException e) {
+	            	  e.printStackTrace();
+	            	} catch (IOException e) {
+	            	  e.printStackTrace();
+	            	}
+                
+                
 //        	}
         	}
 
@@ -674,6 +847,9 @@ public class MakeBet extends Activity {
             if(i == 0 && mParent.get(i).children.size() == 32){
             	ImageView logo = (ImageView) view.findViewById(R.id.imageView1);
             	logo.setImageResource(nfl_images[i1]);
+            }else{
+            	ImageView logo = (ImageView) view.findViewById(R.id.imageView1);
+            	logo.setImageResource(R.drawable.ic_launcher);
             }
             //"i" is the position of the parent/group in the list and 
             //"i1" is the position of the child
@@ -720,4 +896,6 @@ public class MakeBet extends Activity {
         
     }
 
+    
+    
 }

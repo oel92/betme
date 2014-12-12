@@ -51,7 +51,7 @@
         android:layout_height="40dp"
         android:layout_marginRight="20dp"
         android:layout_marginTop="10dp"
-        android:layout_x="210dp"
+        android:layout_x="215dp"
         android:layout_y="418dp"
         android:background="@drawable/cancel"
         android:gravity="center"
@@ -62,28 +62,6 @@
         android:shadowDy="0"
         android:shadowRadius="5"
         android:text="Decline"
-        android:textColor="#FFFFFF"
-        android:textSize="15sp"
-        android:textStyle="bold" />
-
-    <Button
-        android:id="@+id/submit"
-        android:layout_width="140dp"
-        android:layout_height="40dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_x="36dp"
-        android:layout_y="418dp"
-        android:background="@drawable/buttonshape1"
-        android:gravity="center"
-        android:minHeight="25dp"
-        android:shadowColor="#A8A8A8"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="5"
-        android:text="Accept"
-        android:onClick="accept"
         android:textColor="#FFFFFF"
         android:textSize="15sp"
         android:textStyle="bold" />
@@ -155,7 +133,7 @@
         <Button
             android:id="@+id/gameBox"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="76dp"
             android:layout_x="0dp"
             android:layout_y="30dp"
             android:background="@drawable/betbox"
@@ -211,15 +189,40 @@
             android:textStyle="bold|italic" />
 
         <TextView
-            android:id="@+id/textView3"
+            android:id="@+id/date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_x="250dp"
-            android:layout_y="50dp"
+            android:layout_y="55dp"
             android:hint="Date"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textSize="16sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/team1Name"
+            android:layout_width="77dp"
+            android:layout_height="wrap_content"
+            android:layout_x="24dp"
+            android:layout_y="85dp"
+            android:gravity="center_vertical|center_horizontal"
+            android:text="Team1"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/team2Name"
+            android:layout_width="77dp"
+            android:layout_height="wrap_content"
+            android:layout_x="123dp"
+            android:layout_y="85dp"
+            android:gravity="center_vertical|center_horizontal"
+            android:text="Team2"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
     </AbsoluteLayout>
 
     <AbsoluteLayout
@@ -241,7 +244,7 @@
             android:layout_marginRight="10dp"
             android:layout_marginTop="3dp"
             android:layout_x="0dp"
-            android:layout_y="0dp"
+            android:layout_y="20dp"
             android:background="@drawable/invited"
             android:gravity="left|center"
             android:minHeight="25dp"
@@ -258,12 +261,12 @@
         <Button
             android:id="@+id/terms_box"
             android:layout_width="match_parent"
-            android:layout_height="106dp"
+            android:layout_height="91dp"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_weight="8.80"
             android:layout_x="0dp"
-            android:layout_y="23dp"
+            android:layout_y="40dp"
             android:background="@drawable/betbox"
             android:shadowColor="#A8A8A8"
             android:shadowDx="0"
@@ -273,12 +276,34 @@
             android:textSize="15sp" />
 
         <TextView
-            android:id="@+id/textView4"
-            android:layout_width="284dp"
+            android:id="@+id/terms"
+            android:layout_width="310dp"
             android:layout_height="wrap_content"
-            android:layout_x="30dp"
-            android:layout_y="36dp"
+            android:layout_x="17dp"
+            android:layout_y="50dp"
             android:hint="Terms" />
     </AbsoluteLayout>
+
+    <Button
+        android:id="@+id/submit"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_x="35dp"
+        android:layout_y="418dp"
+        android:background="@drawable/buttonshape1"
+        android:gravity="center"
+        android:minHeight="25dp"
+        android:onClick="accept"
+        android:shadowColor="#A8A8A8"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="5"
+        android:text="Accept"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 
 </AbsoluteLayout>

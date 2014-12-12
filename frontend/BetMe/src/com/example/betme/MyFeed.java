@@ -41,6 +41,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -157,6 +158,25 @@ public class MyFeed extends ActionBarActivity {
     public void singleBet(View view){
     	Intent myIntent = new Intent(this, ViewBet.class);
     	myIntent.putExtra("id", userID);
+    	String betID = "";
+    	
+    	ViewGroup parent = (ViewGroup) view.getParent();
+    	if(parent.findViewById(R.id.invitedTo) != null){
+    		int betPosition = parent.indexOfChild(view);
+    		betID = invitedBets.get(betPosition);
+    		
+    	}
+    	else if(parent.findViewById(R.id.activeTab) != null){
+    		int betPosition = parent.indexOfChild(view);
+    		betID = activeBets.get(betPosition);
+    	}
+    	else{
+    		int betPosition = parent.indexOfChild(view);
+    		betID = finishedBets.get(betPosition);
+    	}
+    	
+    	myIntent.putExtra("betID", betID);
+    	
     	startActivity(myIntent);
     }
     

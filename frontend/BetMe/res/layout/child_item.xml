@@ -39,6 +39,7 @@
     android:clickable="true"
     android:focusable="false"
     android:gravity="center_vertical|end"
+    android:onClick="setCheck"
     android:text="" />
 
 </RelativeLayout>

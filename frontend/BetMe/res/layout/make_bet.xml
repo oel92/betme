@@ -148,6 +148,7 @@
         android:background="@drawable/buttonshape1"
         android:gravity="center"
         android:minHeight="25dp"
+        android:onClick="addBet"
         android:shadowColor="#A8A8A8"
         android:shadowDx="0"
         android:shadowDy="0"
