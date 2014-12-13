@@ -1,9 +1,7 @@
 from google.appengine.api import users
 from google.appengine.ext import ndb
 from google.appengine.api import images
-
 from google.appengine.api import mail
-
 from google.appengine.api import files, images
 
 import time
@@ -18,7 +16,6 @@ from random import uniform
 from urlparse import urlparse, parse_qs
 
 import json
-
 
 
 DEFAULT_USER_NAME = 'default_user'
@@ -38,7 +35,7 @@ def user_key(user_name=DEFAULT_USER_NAME):
 	
 	
 class Bet(ndb.Model):
-	"""Models an individual Image entry"""
+	"""Models an individual Bet entry"""
 	user1 = ndb.StringProperty()
 	user2 = ndb.StringProperty()
 	team1 = ndb.StringProperty(default=True)
@@ -50,7 +47,7 @@ class Bet(ndb.Model):
 	accepted = ndb.BooleanProperty()
 	
 class User(ndb.Model):
-	"""Models a User's email rate properties"""
+	"""Models a User entry"""
 	name = ndb.StringProperty()
 	id = ndb.StringProperty()
 	email = ndb.StringProperty(default=True)
@@ -66,10 +63,6 @@ class User(ndb.Model):
 	completed_bets = ndb.KeyProperty(kind=Bet, repeated=True)
 
 class SignIn(webapp2.RequestHandler):
-	def get(self):
-		## Don't know what to put here, if anything???
-		##self.response.write()
-
 	def post(self):
 		name = self.request.get("name")	
 		id = self.request.get("id")		
@@ -128,8 +121,8 @@ class MyFeed(webapp2.RequestHandler):
 					user.completed_bets.insert(0, active_key)
 					user.active_bets.remove(active_key)
 					user.put()
-				
-				active_strings.append(active_key.urlsafe())
+				else:
+					active_strings.append(active_key.urlsafe())
 			
 			#get list completed bets and put in string form
 			for completed_key in user.completed_bets:
@@ -235,7 +228,7 @@ class FriendsFeed(webapp2.RequestHandler):
 			#removes duplicates
 			active_strings = list(set(active_strings)) 
 			completed_strings = list(set(completed_strings))
-			self.response.write(json.dumps({'active': active_strings, 'completed': completed_strings}))
+			self.response.write(json.dumps({'active': active_strings, 'finished': completed_strings}))
 
 ####### is this right if the user isn't in db, it goes to sign in?			
 		else:
@@ -274,10 +267,10 @@ class SearchFriend(webapp2.RequestHandler):
 		results = user_query.fetch(1)		
 		user = results[0]
 		
-		user.friends.append(friend_id)
-		user.friends = list(set(user.friends)) #make sure no duplicate friends
-		
-		user.put()	#update database
+		if not(user_id == friend_id):				#make sure you don't add yourself as friend
+			user.friends.append(friend_id)
+			user.friends = list(set(user.friends))  #make sure no duplicate friends
+			user.put()	#update database
 
 		
 class MakeBet(webapp2.RequestHandler):
@@ -332,9 +325,9 @@ class MakeBet(webapp2.RequestHandler):
 		date_temp.replace(year=int(date[4:]), month=int(date[:2]), day = int(date[2:4])) 
 		new_bet.finish_date = date_temp 
 		
-		bet_key = new_bet.put()
+		bet_key = new_bet.put()		#simultaneously creates unique bet id by using the key
 
-		#add the key to this bet to active bets for user1 and invited bets for user 2 
+		#add the key for this bet to active_bets for user1 and invited_bets for user 2 
 		#Search for id in DB
 		user_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
 		user_query = user_query.filter(User.id == id)
@@ -396,6 +389,9 @@ class ViewBet(webapp2.RequestHandler):
 			user2.active_bets.insert(0, bet_key)
 			user2.invited_bets.remove(bet_key)
 			user2.put()
+			
+			this_bet.accepted = True
+			this_bet.put()
 			
 		#If declined, remove from user1's active_bets and user2's invited_bets
 		if choice == "decline":
