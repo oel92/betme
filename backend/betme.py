@@ -62,6 +62,51 @@ class User(ndb.Model):
 	invited_bets = ndb.KeyProperty(kind=Bet, repeated=True)
 	completed_bets = ndb.KeyProperty(kind=Bet, repeated=True)
 
+#debug	
+class Home(webapp2.RequestHandler):
+	def get(self):
+		user_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
+		all_users = user_query.fetch()
+		
+		bet_query = Bet.query(ancestor = bet_key(DEFAULT_USER_NAME))	
+		all_bets = bet_query.fetch()
+		
+		#Display user fields
+		user_ids = []
+		user_names = []
+		user_urls = []
+		user_pics = []
+		
+		bet_ids = []
+		bet_user1 = []
+		bet_user2 = []
+		bet_team1 = []
+		bet_team2 = []
+		bet_terms = []
+		bet_finish = []
+		bet_accept = []
+		
+		for user in all_users:
+			user_ids.append(user.id)
+			user_names.append(user.name)
+			user_urls.append(user.prof_url)
+			user_pics.append(user.prof_pic_url)
+		
+		for bet in all_bets:
+			bet_ids.append(bet.key.urlsafe())
+			bet_user1.append(bet.user1)
+			bet_user2.append(bet.user2)
+			bet_team1.append(bet.team1)
+			bet_team2.append(bet.team2), 
+			bet_terms.append(bet.terms)
+			bet_finish.append( str(bet.finish_date.month) + "/" + str(bet.finish_date.day) + "/" + str(bet.finish_date.year) )
+			bet_accept.append(bet.accepted)
+			
+		self.response.write(json.dumps({'user_ids': user_ids, 'user_names':user_names, 'user_urls': user_urls, 'user_pics': user_pics,'bet_ids': bet_ids, 'bet_user1': bet_user1, 'bet_user2': bet_user2,'bet_team1': bet_team1,'bet_team2': bet_team2,'bet_terms': bet_terms,'bet_finish': bet_finish,'bet_accept': bet_accept}))
+
+		
+		
+	
 class SignIn(webapp2.RequestHandler):
 	def post(self):
 		name = self.request.get("name")	
@@ -86,10 +131,7 @@ class SignIn(webapp2.RequestHandler):
 			new_user.invited_bets = []
 			new_user.completed_bets = []
 			new_user.put()
-			
-		self.redirect("/myfeed")
-##########do you need to add a user_in_db[0].id to the end of the url so that the myfeed page gets the id as an input?
-		
+
 class MyFeed(webapp2.RequestHandler):
 	def get(self):
 		id = self.request.get("id")
@@ -98,42 +140,36 @@ class MyFeed(webapp2.RequestHandler):
 		user_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
 		user_query = user_query.filter(User.id == id)
 		user_in_db = user_query.fetch(1)
+		user = user_in_db[0]
 		
-###### Do i need to make sure this user is in the DB, or are they definitely there if we get to this point on the MyFeed page? see else statement below		
-		if user_in_db:
-			user = user_in_db[0]
+		#For output to mobile ap
+		invited_strings = []
+		active_strings = []
+		completed_strings = []
+		
+		#get list of invited bet ID's (the keys in string form)
+		for invited_key in user.invited_bets:
+			invited_strings.append(invited_key.urlsafe())
 			
-			#For output to mobile ap
-			invited_strings = []
-			active_strings = []
-			completed_strings = []
+		#get list of active bet ID's, check if finish date has passed. Add to completed bet list if it has and remove from active bets
+		current_date= datetime.datetime.now().date()
+		for active_key in user.active_bets[:]:	# <-- this syntax so that when elements are removed it does mess with iterations
+			this_bet = active_key.get()
+			if current_date > this_bet.finish_date:
+				#move this bet to completed_bets and delete it from active_bets in this User's database object
+				user.completed_bets.insert(0, active_key)
+				user.active_bets.remove(active_key)
+				user.put()
+			else:
+				active_strings.append(active_key.urlsafe())
+		
+		#get list completed bets and put in string form
+		for completed_key in user.completed_bets:
+			completed_strings.append(completed_key.urlsafe())
 			
-			#get list of invited bet ID's (the keys in string form)
-			for invited_key in user.invited_bets:
-				invited_strings.append(invited_key.urlsafe())
-				
-			#get list of active bet ID's, check if finish date has passed. Add to completed bet list if it has and remove from active bets
-			current_date= datetime.datetime.now().date()
-			for active_key in user.active_bets[:]:	# <-- this syntax so that when elements are removed it does mess with iterations
-				this_bet = active_key.get()
-				if current_date > this_bet.finish_date:
-					#move this bet to completed_bets and delete it from active_bets in this User's database object
-					user.completed_bets.insert(0, active_key)
-					user.active_bets.remove(active_key)
-					user.put()
-				else:
-					active_strings.append(active_key.urlsafe())
-			
-			#get list completed bets and put in string form
-			for completed_key in user.completed_bets:
-				completed_strings.append(completed_key.urlsafe())
-				
-			self.response.write(json.dumps({'invited': invited_strings, 'active':active_strings, 'completed': completed_strings}))
+		self.response.write(json.dumps({'invited': invited_strings, 'active':active_strings, 'completed': completed_strings}))
 
-####### is this right if the user isn't in db, it goes to sign in? same question for friends feed below	
-		else:
-			self.redirect("/")
-		
+	
 class GetBet(webapp2.RequestHandler):
 	def get(self):
 		bet_id = self.request.get("bet_id")	
@@ -202,37 +238,30 @@ class FriendsFeed(webapp2.RequestHandler):
 		user_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
 		user_query = user_query.filter(User.id == id)
 		user_in_db = user_query.fetch(1)
+		user = user_in_db[0]
 		
-###### Do i need to make sure this user is in the DB, or are they definitely there if we get to this point on the FriendsFeed page? see else statement below		
-		if user_in_db:
-			user = user_in_db[0]
+		#For output to mobile app
+		active_strings = []
+		completed_strings = []
+		
+		for friend_id in user.friends:
+			#Get friend's object
+			f_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
+			f_query = f_query.filter(User.id == friend_id)
+			results = f_query.fetch(1)
+			friend = results[0];
 			
-			#For output to mobile app
-			active_strings = []
-			completed_strings = []
-			
-			for friend_id in user.friends:
-				#Get friend's object
-				f_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
-				f_query = f_query.filter(User.id == friend_id)
-				results = f_query.fetch(1)
-				friend = results[0];
+			#get list of active bet ID's, not checking any date stuff because it will update when the friend views their MyFeed page
+			for active_key in friend.active_bets:	
+				active_strings.append(active_key.urlsafe())
+			#get list completed bets and put in string form
+			for completed_key in friend.completed_bets:
+				completed_strings.append(completed_key.urlsafe())
 				
-				#get list of active bet ID's, not checking any date stuff because it will update when the friend views their MyFeed page
-				for active_key in friend.active_bets:	
-					active_strings.append(active_key.urlsafe())
-				#get list completed bets and put in string form
-				for completed_key in friend.completed_bets:
-					completed_strings.append(completed_key.urlsafe())
-					
-			#removes duplicates
-			active_strings = list(set(active_strings)) 
-			completed_strings = list(set(completed_strings))
-			self.response.write(json.dumps({'active': active_strings, 'finished': completed_strings}))
-
-####### is this right if the user isn't in db, it goes to sign in?			
-		else:
-			self.redirect("/")
+		#removes duplicates
+		active_strings = list(set(active_strings)) 
+		completed_strings = list(set(completed_strings))
+		self.response.write(json.dumps({'active': active_strings, 'finished': completed_strings}))
 		
 
 class SearchFriend(webapp2.RequestHandler):
@@ -511,7 +540,8 @@ class ViewBet(webapp2.RequestHandler):
 		
 
 application = webapp2.WSGIApplication([
-    ('/', SignIn),
+	('/', 		Home),
+    ('/signin', SignIn),
     ('/myfeed', MyFeed),
     ('/getbet', GetBet),
 	('/getfriendsbet', GetFriendsBet),
