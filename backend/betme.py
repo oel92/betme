@@ -50,7 +50,6 @@ class User(ndb.Model):
 	"""Models a User entry"""
 	name = ndb.StringProperty()
 	id = ndb.StringProperty()
-	email = ndb.StringProperty(default=True)
 	prof_url = ndb.StringProperty(indexed=False)
 	prof_pic_url = ndb.StringProperty(indexed=False)
 	
