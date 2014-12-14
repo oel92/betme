@@ -62,7 +62,16 @@ class User(ndb.Model):
 	invited_bets = ndb.KeyProperty(kind=Bet, repeated=True)
 	completed_bets = ndb.KeyProperty(kind=Bet, repeated=True)
 
-#debug	
+#####debug	
+
+class ClearUsers(webapp2.RequestHandler):
+	def get(self):
+		ndb.delete_multi(User.query(ancestor = user_key(DEFAULT_USER_NAME)).fetch(keys_only=True))
+		
+class ClearBets(webapp2.RequestHandler):
+	def get(self):
+		ndb.delete_multi(Bet.query(ancestor = bet_key(DEFAULT_USER_NAME)).fetch(keys_only=True))		
+		
 class Home(webapp2.RequestHandler):
 	def get(self):
 		user_query = User.query(ancestor = user_key(DEFAULT_USER_NAME))	
@@ -541,6 +550,8 @@ class ViewBet(webapp2.RequestHandler):
 
 application = webapp2.WSGIApplication([
 	('/', 		Home),
+	('/clearbets', ClearBets),
+	('/clearusers', ClearUsers),
     ('/signin', SignIn),
     ('/myfeed', MyFeed),
     ('/getbet', GetBet),
